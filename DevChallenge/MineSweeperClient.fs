@@ -34,12 +34,15 @@
                 let path = pathFind otherSweepers (myPos.X, myPos.Y) (closestMinePos.X, closestMinePos.Y)
                 if path.Length < 2 then MineSweeperDirection.None
                 else
-                    match myPos.X - path.[1].x, myPos.Y - path.[1].y with
-                    | (dx, _) when dx < 0 -> MineSweeperDirection.Right
-                    | (dx, _) when dx > 0 -> MineSweeperDirection.Left
-                    | (_, dy) when dy < 0 -> MineSweeperDirection.Down
-                    | (_, dy) when dy > 0 -> MineSweeperDirection.Up
-                    | (_, _) -> MineSweeperDirection.None
+                    lastPosition <- (myPos.X, myPos.Y)
+                    lastMove <-
+                        match myPos.X - path.[1].x, myPos.Y - path.[1].y with
+                        | (dx, _) when dx < 0 -> MineSweeperDirection.Right
+                        | (dx, _) when dx > 0 -> MineSweeperDirection.Left
+                        | (_, dy) when dy < 0 -> MineSweeperDirection.Down
+                        | (_, dy) when dy > 0 -> MineSweeperDirection.Up
+                        | (_, _) -> MineSweeperDirection.None
+                    lastMove
 
         member this.Start login (password:string) (createAccount:bool) = 
             let socket = new AsyncSocket()
