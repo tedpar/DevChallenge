@@ -12,11 +12,13 @@
         let fullName = "Ted Parnefors"
         let email = "ted.parnefors@kentor.se"
         let agentName = "AStarWalker"
-        let agentRevision = "1"
+        let agentRevision = "2"
         let randomizer = System.Random()
 
         let mutable lastPosition = (-1, -1)
         let mutable lastMove = MineSweeperDirection.None
+        let mutable theWorldWidth = 10
+        let mutable theWorldHeight = 10
 
         let calculateMove (minePositions:MinePosition list) (sweeperPositions:SweeperPosition list) clientSweeperId =
             let myPos = sweeperPositions |> Seq.find (fun pos -> pos.SweeperId = clientSweeperId)
@@ -31,7 +33,7 @@
                 let closestMinePos = minePositions |> Seq.sortBy (fun pos -> Math.Abs(pos.X - myPos.X) + Math.Abs(pos.Y - myPos.Y)) |> Seq.head
                 printfn "Closest mine @ %dx%d (Delta: %d,%d)" closestMinePos.X closestMinePos.Y (myPos.X - closestMinePos.X) (myPos.Y - closestMinePos.Y)
                 let otherSweepers = sweeperPositions |> Seq.filter (fun p -> (p.X = myPos.X && p.Y = myPos.Y) = false) |> Seq.map (fun p -> (p.X, p.Y))
-                let path = pathFind otherSweepers (myPos.X, myPos.Y) (closestMinePos.X, closestMinePos.Y)
+                let path = pathFind otherSweepers (myPos.X, myPos.Y) (closestMinePos.X, closestMinePos.Y) theWorldWidth theWorldHeight
                 if path.Length < 2 then MineSweeperDirection.None
                 else
                     lastPosition <- (myPos.X, myPos.Y)
@@ -59,7 +61,6 @@
             )
 
             let messageSubscription = socket.ReceivedMessage.Subscribe (fun e -> 
-                let mutable isLoggedIn = false
                 let message = ServerMessage.Parse e
                 this.LastMessageReceived <- Some(DateTime.Now)
                 let timestamp = System.DateTime.Now.ToString("HH:mm:ss.fff")
@@ -94,6 +95,8 @@
                     socket.AsyncSendString (joinMessage.ToString()) |> Async.Ignore |> Async.Start
                 | ServerMessage.MineSweeperInit(sweeperId, worldWidth, worldHeight, maxMineCount, mineRegenerationTime) ->
                     clientSweeperId := Some(sweeperId)
+                    theWorldWidth <- worldWidth
+                    theWorldHeight <- worldHeight
                     printfn "%s Received MineSweeperInit, SweeperId: %d, World width: %d, World height: %d, Max mine count: %d, Mine regeneration time: %d" timestamp sweeperId worldWidth worldHeight maxMineCount mineRegenerationTime
                 | ServerMessage.MineSweeperMineCreated(x,y) ->
                     printfn "%s Received MineCreated @ x:%d, y:%d" timestamp x y
@@ -104,8 +107,8 @@
                     if (!clientSweeperId).IsSome then
                         let myPos = sweeperPositions |> Seq.find (fun pos -> pos.SweeperId = (!clientSweeperId).Value)
                         System.Console.Clear()
-                        for y in [0..9] do
-                            for x in [0..9] do
+                        for y in 0..theWorldHeight-1 do
+                            for x in 0..theWorldWidth-1 do
                                 if (minePositions |> Seq.exists (fun mine -> mine.X = x && mine.Y = y)) then 
                                     System.Console.Write("M")
                                 elif myPos.X = x && myPos.Y = y then

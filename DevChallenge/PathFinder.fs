@@ -38,14 +38,13 @@ module PathFinder =
             | currentNode::rest ->
                 let likeCurrent = fun n -> (n.mapPoint) = (currentNode.mapPoint) // Vale of n == value of current
                 let containsCurrent = List.exists likeCurrent                    // List contains likeCurrent
-                let checkNeighbors = checkNeighbors rest 
 
                 if openNodeAcc |> List.exists (isShorter currentNode) then // The current node is a shorter path than than one we already have.
                     let shorterPath = openNodeAcc |> List.filter (fun x -> (likeCurrent x) = false) // So remove the old one...
-                    checkNeighbors  (currentNode::shorterPath)            //...and arry on with the new one.
+                    checkNeighbors rest (currentNode::shorterPath)            //...and carry on with the new one.
                 elif not(containsCurrent closedNodes) && not(containsCurrent openNodeAcc) then //The current node has not been queried
-                    checkNeighbors (currentNode::openNodeAcc)             // So add it to the open set
-                else checkNeighbors openNodeAcc                           // else carry on
+                    checkNeighbors rest (currentNode::openNodeAcc)             // So add it to the open set
+                else checkNeighbors rest openNodeAcc                           // else carry on
 
         let walkableNeighbors = 
             (map.GetNeighborMapPoints openNodes.Head.mapPoint.coordinate.x openNodes.Head.mapPoint.coordinate.y)
@@ -62,13 +61,13 @@ module PathFinder =
                 aStar map start goal nextSet (nextSet.Head::closedNodes)
             else None //if there are no open nodes pathing has failed
 
-    let pathFind obstacleCoordinates start goal = 
+    let pathFind obstacleCoordinates start goal worldWidth worldHeight = 
         let map = [
-            for y in 0..9 do
-                for x in 0..9 do 
+            for y in 0..worldHeight-1 do
+                for x in 0..worldWidth-1 do 
                     if obstacleCoordinates |> Seq.exists (fun (pX,pY) -> pX = x && pY = y) then yield 1 else yield 0 ]
 
-        let collisionMap = { width = 10; height = 10; map = map }
+        let collisionMap = { width = worldWidth; height = worldHeight; map = map }
         let start = collisionMap.GetMapPoint (fst start) (snd start)
         let goal = collisionMap.GetMapPoint (fst goal) (snd goal)
         let endNode = aStar collisionMap start goal [{mapPoint = start; h = start.Distance goal; g = 0.0; parent = None}] []
