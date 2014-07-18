@@ -62,10 +62,11 @@ module PathFinder =
             else None //if there are no open nodes pathing has failed
 
     let pathFind obstacleCoordinates start goal worldWidth worldHeight = 
+        let isObstructed (x,y) = obstacleCoordinates |> Seq.exists (fun coord -> coord = (x,y))
         let map = [
             for y in 0..worldHeight-1 do
                 for x in 0..worldWidth-1 do 
-                    if obstacleCoordinates |> Seq.exists (fun (pX,pY) -> pX = x && pY = y) then yield 1 else yield 0 ]
+                    if isObstructed (x,y) then yield 1 else yield 0 ]
 
         let collisionMap = { width = worldWidth; height = worldHeight; map = map }
         let start = collisionMap.GetMapPoint (fst start) (snd start)
