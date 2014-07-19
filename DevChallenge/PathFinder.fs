@@ -13,7 +13,9 @@ module PathFinder =
 
     type MapPoint = { coordinate:Coordinate; value:int } 
         with
-            member this.Distance mp = sqrt (float(this.coordinate.x+mp.coordinate.x)**2.0 + float(this.coordinate.y+mp.coordinate.y)**2.0)
+            //member this.Distance mp = sqrt (float(this.coordinate.x+mp.coordinate.x)**2.0 + float(this.coordinate.y+mp.coordinate.y)**2.0)
+            member this.Distance mp = float (Math.Abs(this.coordinate.x - mp.coordinate.x) + Math.Abs(this.coordinate.y - mp.coordinate.y))
+
 
     type PathNode = { mapPoint:MapPoint; h:float; g:float; parent:PathNode option }
 
@@ -29,8 +31,7 @@ module PathFinder =
 
     //The A* Algorithm
     let rec aStar (map:Map) start goal (openNodes: PathNode list) (closedNodes: PathNode list) =
-        let isShorter nodeA nodeB = 
-            nodeA = nodeB && (nodeA.g + nodeA.h) < (nodeB.g + nodeB.h) 
+        let isShorter nodeA nodeB = nodeA <> nodeB && (nodeA.g + nodeA.h) < (nodeB.g + nodeB.h) 
 
         let rec checkNeighbors neighbors openNodeAcc = 
             match neighbors with
@@ -54,12 +55,8 @@ module PathFinder =
         let pathToGoal = walkableNeighbors |> List.tryFind (fun x -> x.mapPoint = goal) 
         if pathToGoal.IsSome then pathToGoal
         else
-            let nextSet = 
-                checkNeighbors walkableNeighbors openNodes.Tail
-                |> List.sortBy (fun n -> (n.g + n.h))
-            if nextSet.Length > 0 then
-                aStar map start goal nextSet (nextSet.Head::closedNodes)
-            else None //if there are no open nodes pathing has failed
+            let nextSet = checkNeighbors walkableNeighbors openNodes.Tail |> List.sortBy (fun n -> (n.g + n.h))
+            if nextSet.Length > 0 then aStar map start goal nextSet (nextSet.Head::closedNodes) else None
 
     let pathFind obstacleCoordinates start goal worldWidth worldHeight = 
         let isObstructed (x,y) = obstacleCoordinates |> Seq.exists (fun coord -> coord = (x,y))
